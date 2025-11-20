@@ -1,0 +1,82 @@
+# 🕵️‍♂️ Real-Time Transactions Analytics
+
+### *MLOps Homework 3 — Бельковец Григорий (БПМИ221)*
+
+Сервис подготовлен в демонстрационных целях в качестве домашнего задания на курсе МТС ШАД 2025 в рамках занятий по MLOps.
+Датасеты предоставлены в рамках соревнования [https://www.kaggle.com/competitions/teta-ml-1-2025](https://www.kaggle.com/competitions/teta-ml-1-2025)
+
+Система обеспечивает загрузку транзакций из CSV в Kafka, потоковую обработку и хранение данных в ClickHouse для аналитики.
+
+## 🏗️ Архитектура
+
+```
+├── README.md
+├── docker-compose.yml
+├── clickhouse_init.sql
+├── load_kafka.py
+├── requirements.txt
+├── Dockerfile
+├── train.csv
+```
+
+## 🛠️ Компоненты системы (пошагово)
+
+### Шаг 1: Поднять инфраструктуру Kafka и Zookeeper
+
+```bash
+docker compose up -d --build zookeeper kafka kafka-setup kafka-ui 
+```
+
+### Шаг 2: Загрузка транзакций в Kafka
+
+```bash
+docker compose run --rm --build load_kafka
+```
+
+### Шаг 3: Настройка ClickHouse
+
+```bash
+docker compose up -d --build clickhouse 
+```
+
+После этой команды у вас должна появиться в корне папка clickhouse_data/
+
+Проверьте, что все нужные таблицы были созданы успешно: 
+
+```bash
+docker exec -it clickhouse clickhouse-client
+SHOW TABLES;
+```
+
+Ожидаемый результат:
+kafka_transactions
+mv_transactions
+transactions
+
+
+### Шаг 4: Аналитика
+
+* SQL-запрос для получения информации по наибольшей транзакции по каждому штату находится в файле query.sql
+
+* Исполнение запроса и экспорт результата в CSV:
+
+```bash
+docker exec -i clickhouse clickhouse-client \
+  --multiquery \
+  --format=CSVWithNames \
+  --query="$(cat query.sql)" > max_transaction_per_state.csv
+```
+
+## 📌 Примечания
+
+* CSV `train.csv` должен быть в корне проекта
+* Порты 2181, 9095, 8123, 9000, 8080 должны быть свободны на хосте.
+* Все SQL скрипты выполняются при первом старте ClickHouse; если база уже создана, используйте ручное выполнение.
+
+## Эффективность исполнения
+Используются разделение на партиции (PARTITION BY toYYYYMM(transaction_time)) и сортировка по (us_state, amount DESC) (ORDER BY) для быстрого получения максимальных транзакций по каждому штату. 
+
+## 💡 Автор
+
+**Григорий Бельковец**  
+БПМИ221
