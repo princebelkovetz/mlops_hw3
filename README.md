@@ -24,20 +24,19 @@
 ### Шаг 1: Поднять инфраструктуру Kafka и Zookeeper
 
 ```bash
-docker compose up -d zookeeper kafka kafka-setup kafka-ui
+docker compose up -d zookeeper kafka kafka-setup kafka-ui --build
 ```
 
 ### Шаг 2: Загрузка транзакций в Kafka
 
 ```bash
-docker compose run --rm load_kafka
+docker compose run --rm load_kafka --build
 ```
 
 ### Шаг 3: Настройка ClickHouse
 
 ```bash
-docker compose up -d clickhouse
-docker compose exec -it clickhouse clickhouse-client
+docker compose up -d clickhouse --build
 ```
 
 ### Шаг 4: Аналитика
