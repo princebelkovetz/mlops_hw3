@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS transactions (
 )
 ENGINE = MergeTree()
 PARTITION BY toYYYYMM(transaction_time)
-ORDER BY (us_state, amount DESC);
+ORDER BY (us_state, amount);
 
 
 CREATE MATERIALIZED VIEW mv_transactions
