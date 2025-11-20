@@ -33,8 +33,6 @@ def load_csv_to_kafka(csv_file, producer, topic):
             if count % 50000 == 0:
                 print(f"Processed {count} rows...")
                 sys.stdout.flush()
-            if count >= 100000:
-                break
 
         producer.flush()
     print(f"Loaded {count} rows to Kafka topic {topic}")
