@@ -39,6 +39,21 @@ docker compose run --rm --build load_kafka
 docker compose up -d --build clickhouse 
 ```
 
+После этой команды у вас должна появиться в корне папка clickhouse_data/
+
+Проверьте, что все нужные таблицы были созданы успешно: 
+
+```bash
+docker exec -it clickhouse clickhouse-client
+SHOW TABLES;
+```
+
+Ожидаемый результат:
+kafka_transactions
+mv_transactions
+transactions
+
+
 ### Шаг 4: Аналитика
 
 * SQL-запрос для получения информации по наибольшей транзакции по каждому штату находится в файле query.sql
