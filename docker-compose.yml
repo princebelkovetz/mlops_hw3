@@ -103,6 +103,7 @@ services:
       - "./clickhouse_init.sql:/docker-entrypoint-initdb.d/init.sql"
     environment:
       CLICKHOUSE_DB: default
+      CLICKHOUSE_PASSWORD: pass
     networks:
       - ml-scorer
     

@@ -1,0 +1,169 @@
+# models/marts/schema.yml
+version: 2
+
+models:
+  # --- Staging layer ---
+  - name: stg_transactions
+    description: "Очищенные и нормализованные транзакции из Kafka. Содержит вычисляемые поля для анализа."
+    columns:
+      - name: transaction_time
+        description: "Исходное время транзакции (DateTime)."
+        tests:
+          - not_null
+
+      - name: transaction_date
+        description: "Дата транзакции (извлечена из transaction_time)."
+        tests:
+          - not_null
+
+      - name: transaction_hour
+        description: "Час транзакции (0–23)."
+        tests:
+          - not_null
+
+      - name: day_of_week
+        description: "День недели (1 = понедельник, 7 = воскресенье)."
+
+      - name: merch
+        description: "Название мерчанта."
+        tests:
+          - not_null
+
+      - name: cat_id
+        description: "Категория транзакции (например, 'grocery', 'travel')."
+        tests:
+          - not_null
+
+      - name: amount
+        description: "Сумма транзакции в USD."
+        tests:
+          - not_null
+
+      - name: amount_bucket
+        description: "Сегмент суммы: 'small' (<50), 'medium' (50–200), 'large' (200–1000), 'very_large' (>1000)."
+        tests:
+          - accepted_values:
+              values: ['small', 'medium', 'large', 'very_large']
+
+      - name: full_name
+        description: "Полное имя клиента (имя + фамилия)."
+        tests:
+          - not_null
+
+      - name: gender
+        description: "Пол клиента: 'M' или 'F'."
+        tests:
+          - accepted_values:
+              values: ['M', 'F']
+
+      - name: us_state
+        description: "Штат США (например, 'CA', 'NY')."
+        tests:
+          - not_null
+
+      - name: is_fraud
+        description: "Признак фрода: true = фрод, false = легитимная."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+  # --- Mart: fraud by category ---
+  - name: mart_fraud_by_category
+    description: "Анализ фрода по категориям транзакций."
+    tests:
+      - unique:
+          column_name: cat_id
+    columns:
+      - name: cat_id
+        tests:
+          - not_null
+      - name: fraud_rate
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+
+  # --- Mart: daily state metrics ---
+  - name: mart_daily_state_metrics
+    description: "Дневные метрики по штатам США."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [transaction_date, us_state]
+    columns:
+      - name: transaction_date
+        tests:
+          - not_null
+      - name: us_state
+        tests:
+          - not_null
+      - name: pct_large_transactions
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+
+  # --- Mart: fraud by state ---
+  - name: mart_fraud_by_state
+    description: "Географический анализ фрода по штатам."
+    tests:
+      - unique:
+          column_name: us_state
+    columns:
+      - name: us_state
+        tests:
+          - not_null
+      - name: fraud_rate
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+
+  # --- Mart: customer risk profile ---
+  - name: mart_customer_risk_profile
+    description: "Профиль риска клиентов на основе истории транзакций."
+    tests:
+      - unique:
+          column_name: full_name
+    columns:
+      - name: full_name
+        tests:
+          - not_null
+      - name: risk_level
+        tests:
+          - accepted_values:
+              values: ['LOW', 'MEDIUM', 'HIGH']
+
+  # --- Mart: hourly fraud pattern ---
+  - name: mart_hourly_fraud_pattern
+    description: "Временные паттерны фрода по часам и дням недели."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [day_of_week, transaction_hour]
+    columns:
+      - name: day_of_week
+        tests:
+          - not_null
+      - name: transaction_hour
+        tests:
+          - not_null
+      - name: fraud_rate
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+
+  # --- Mart: merchant analytics ---
+  - name: mart_merchant_analytics
+    description: "Аналитика по мерчантам: оборот, фрод, подозрительность."
+    tests:
+      - unique:
+          column_name: merch
+    columns:
+      - name: merch
+        tests:
+          - not_null
+      - name: is_suspicious
+        tests:
+          - accepted_values:
+              values: [0, 1]

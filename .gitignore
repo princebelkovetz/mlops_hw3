@@ -2,3 +2,9 @@
 *.json
 *.csv
 .DS_Store
+# dbt
+target/
+logs/
+dbt_packages/
+clickhouse_data/
+dbt/package-lock.yml
