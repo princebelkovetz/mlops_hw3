@@ -40,7 +40,7 @@ models:
           - not_null
 
       - name: amount_bucket
-        description: "Сегмент суммы: 'small' (<50), 'medium' (50–200), 'large' (200–1000), 'very_large' (>1000)."
+        description: "Категория суммы транзакции: 'small' — до $25, 'medium' — от $25 до $99.99, 'large' — от $100 до $499.99, 'very_large' — $500 и выше."
         tests:
           - accepted_values:
               values: ['small', 'medium', 'large', 'very_large']
